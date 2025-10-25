@@ -3,7 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Tutor - Test Interface</title>
+    <title>AI Tutor - Interactive Learning</title>
+
+    <!-- Marked.js for Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- Prism.js for superior syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+
     <style>
         * {
             margin: 0;
@@ -11,71 +27,214 @@
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+        :root {
+            --bg-primary: #212121;
+            --bg-secondary: #2f2f2f;
+            --bg-tertiary: #3a3a3a;
+            --bg-chat: #1a1a1a;
+            --text-primary: #ececec;
+            --text-secondary: #b4b4b4;
+            --accent-primary: #10a37f;
+            --accent-hover: #0d8b6d;
+            --user-message-bg: #2f2f2f;
+            --tutor-message-bg: transparent;
+            --border-color: #404040;
+            --code-bg: #000000;
+            --error-bg: #3d1e1e;
+            --error-text: #ff6b6b;
         }
 
-        .container {
-            width: 100%;
-            max-width: 800px;
-            height: 90vh;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
             display: flex;
-            flex-direction: column;
             overflow: hidden;
         }
 
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            transition: transform 0.3s ease;
         }
 
-        .header h1 {
-            font-size: 24px;
+        .sidebar-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .new-chat-btn {
+            width: 100%;
+            padding: 12px 16px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .new-chat-btn:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
             font-weight: 600;
         }
 
-        .stats {
+        .user-info-sidebar {
+            padding: 8px 12px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .user-info-sidebar label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .user-info-sidebar input {
+            width: 100%;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .stat-card {
+            background: var(--bg-tertiary);
+            padding: 12px;
+            border-radius: 8px;
             display: flex;
-            gap: 15px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .clear-chat-btn {
+            width: 100%;
+            padding: 10px 16px;
+            background: var(--error-bg);
+            border: 1px solid #ff6b6b;
+            color: var(--error-text);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .clear-chat-btn:hover {
+            background: #4d2525;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-chat);
+        }
+
+        .chat-header {
+            padding: 16px 24px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .toggle-sidebar-btn {
+            display: none;
+            padding: 8px 12px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
             font-size: 14px;
         }
 
-        .stat-item {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-
-        .chat-area {
+        /* Chat Area */
+        .chat-container {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
-            background: #f8f9fa;
+            overflow-x: hidden;
+            padding: 24px;
+            scroll-behavior: smooth;
         }
 
-        .message {
-            margin-bottom: 20px;
-            display: flex;
-            animation: fadeIn 0.3s ease-in;
+        .message-wrapper {
+            margin-bottom: 24px;
+            animation: fadeIn 0.4s ease-out;
         }
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(20px);
             }
             to {
                 opacity: 1;
@@ -83,142 +242,335 @@
             }
         }
 
-        .message.user {
-            justify-content: flex-end;
-        }
-
-        .message-content {
-            max-width: 70%;
-            padding: 12px 16px;
+        .message {
+            max-width: 800px;
+            margin: 0 auto;
+            display: flex;
+            gap: 16px;
+            padding: 20px;
             border-radius: 12px;
-            word-wrap: break-word;
         }
 
-        .message.user .message-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-bottom-right-radius: 4px;
+        .message.user {
+            background: var(--user-message-bg);
         }
 
-        .message.tutor .message-content {
-            background: white;
-            color: #333;
-            border: 1px solid #e0e0e0;
-            border-bottom-left-radius: 4px;
+        .message.tutor {
+            background: var(--tutor-message-bg);
         }
 
-        .message-content pre {
-            background: #2d2d2d;
-            color: #f8f8f2;
-            padding: 12px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 10px 0;
-            font-family: 'Courier New', monospace;
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-weight: 600;
             font-size: 14px;
         }
 
-        .message-content code {
-            background: #f4f4f4;
-            color: #d63384;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
+        .message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .message.tutor .message-avatar {
+            background: var(--accent-primary);
+            color: white;
+        }
+
+        .message-content {
+            flex: 1;
+            color: var(--text-primary);
+            line-height: 1.7;
+            font-size: 15px;
+            overflow: hidden;
+        }
+
+        /* Markdown Styling */
+        .message-content h1,
+        .message-content h2,
+        .message-content h3,
+        .message-content h4 {
+            margin-top: 24px;
+            margin-bottom: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+
+        .message-content h1:first-child,
+        .message-content h2:first-child,
+        .message-content h3:first-child,
+        .message-content h4:first-child {
+            margin-top: 0;
+        }
+
+        .message-content h1 { font-size: 28px; }
+        .message-content h2 { font-size: 24px; }
+        .message-content h3 { font-size: 20px; }
+        .message-content h4 { font-size: 18px; }
+
+        .message-content p {
+            margin-bottom: 16px;
+            line-height: 1.7;
+        }
+
+        .message-content ul,
+        .message-content ol {
+            margin: 16px 0;
+            padding-left: 28px;
+        }
+
+        .message-content li {
+            margin-bottom: 10px;
+            line-height: 1.7;
+        }
+
+        .message-content a {
+            color: var(--accent-primary);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .message-content a:hover {
+            border-bottom-color: var(--accent-primary);
+        }
+
+        .message-content strong {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .message-content em {
+            font-style: italic;
+        }
+
+        .message-content blockquote {
+            border-left: 4px solid var(--accent-primary);
+            padding-left: 20px;
+            margin: 20px 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .message-content hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 32px 0;
+        }
+
+        /* Code Blocks - Perfect ChatGPT Style */
+        .code-block-wrapper {
+            background: var(--code-bg);
+            border-radius: 12px;
+            margin: 24px 0;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            border: 1px solid #2a2a2a;
+        }
+
+        .code-header {
+            background: #1a1a1a;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .code-language {
             font-size: 13px;
+            color: #e5e5e5;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.3px;
+        }
+
+        .copy-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #d5d5d5;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+        }
+
+        .copy-btn.copied {
+            background: rgba(16, 163, 127, 0.2);
+            color: var(--accent-primary);
+        }
+
+        .message-content pre {
+            margin: 0;
+            background: var(--code-bg);
+            border-radius: 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .message-content pre[class*="language-"] {
+            margin: 0;
+            padding: 0;
+            background: var(--code-bg);
+        }
+
+        .message-content pre code {
+            display: block;
+            padding: 20px 24px;
+            font-family: 'Fira Code', 'SF Mono', 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.8;
+            background: var(--code-bg);
+            color: #d4d4d4;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        /* Inline code */
+        .message-content code {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e9e9e9;
+            padding: 3px 7px;
+            border-radius: 5px;
+            font-family: 'Fira Code', 'SF Mono', 'Consolas', monospace;
+            font-size: 13.5px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .message-content pre code {
             background: transparent;
-            color: #f8f8f2;
-            padding: 0;
-        }
-
-        .input-area {
-            padding: 20px;
-            background: white;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .user-info {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .user-info input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 10px;
-        }
-
-        #questionInput {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            resize: none;
-            font-family: inherit;
-        }
-
-        button {
-            padding: 12px 24px;
+            padding: 20px 24px;
             border: none;
+        }
+
+        /* Prism Theme Overrides - ChatGPT Colors */
+        .token.comment,
+        .token.prolog,
+        .token.doctype,
+        .token.cdata {
+            color: #6a9955;
+            font-style: italic;
+        }
+
+        .token.punctuation {
+            color: #d4d4d4;
+        }
+
+        .token.property,
+        .token.tag,
+        .token.boolean,
+        .token.number,
+        .token.constant,
+        .token.symbol,
+        .token.deleted {
+            color: #b5cea8;
+        }
+
+        .token.selector,
+        .token.attr-name,
+        .token.string,
+        .token.char,
+        .token.builtin,
+        .token.inserted {
+            color: #ce9178;
+        }
+
+        .token.operator,
+        .token.entity,
+        .token.url,
+        .language-css .token.string,
+        .style .token.string {
+            color: #d4d4d4;
+        }
+
+        .token.atrule,
+        .token.attr-value,
+        .token.keyword {
+            color: #569cd6;
+        }
+
+        .token.function,
+        .token.class-name {
+            color: #dcdcaa;
+        }
+
+        .token.regex,
+        .token.important,
+        .token.variable {
+            color: #9cdcfe;
+        }
+
+        /* Table Styling */
+        .message-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
+            overflow: hidden;
+        }
+
+        .message-content table th,
+        .message-content table td {
+            padding: 14px 16px;
+            border: 1px solid var(--border-color);
+            text-align: left;
+        }
+
+        .message-content table th {
+            background: var(--bg-tertiary);
             font-weight: 600;
-            transition: all 0.3s ease;
+            color: var(--text-primary);
         }
 
-        #sendBtn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .message-content table tr:hover {
+            background: rgba(255, 255, 255, 0.03);
         }
 
-        #sendBtn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        /* Input Area */
+        .input-area {
+            padding: 20px 24px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
         }
 
-        #sendBtn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+        .input-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
         }
 
-        #clearBtn {
-            background: #dc3545;
-            color: white;
-        }
-
-        #clearBtn:hover {
-            background: #c82333;
-        }
-
-        .loading {
+        .loading-indicator {
             display: none;
             align-items: center;
-            gap: 10px;
-            color: #666;
+            gap: 12px;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
             font-size: 14px;
         }
 
-        .loading.active {
+        .loading-indicator.active {
             display: flex;
         }
 
         .spinner {
             width: 20px;
             height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            border: 3px solid var(--bg-tertiary);
+            border-top: 3px solid var(--accent-primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -228,73 +580,268 @@
             100% { transform: rotate(360deg); }
         }
 
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #f5c6cb;
+        .input-wrapper {
+            display: flex;
+            gap: 12px;
+            align-items: flex-end;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+            transition: all 0.2s;
         }
 
+        .input-wrapper:focus-within {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.1);
+        }
+
+        #questionInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            max-height: 200px;
+            line-height: 1.6;
+        }
+
+        #questionInput::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .send-btn {
+            background: var(--accent-primary);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: var(--accent-hover);
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Error Message */
+        .error-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--error-bg);
+            border: 1px solid var(--error-text);
+            color: var(--error-text);
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Custom Scrollbar */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 10px;
+            height: 10px;
         }
 
         ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: transparent;
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 5px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #555;
+            background: var(--border-color);
+        }
+
+        /* Hide horizontal scrollbar but keep functionality */
+        .message-content pre::-webkit-scrollbar {
+            height: 0px;
+        }
+
+        .message-content pre {
+            scrollbar-width: none;
+        }
+
+        /* Welcome Screen */
+        .welcome-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .welcome-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin-bottom: 24px;
+            color: white;
+        }
+
+        .welcome-title {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .welcome-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100%;
+                z-index: 100;
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .toggle-sidebar-btn {
+                display: block;
+            }
+
+            .message {
+                padding: 16px;
+            }
+
+            .chat-container {
+                padding: 16px;
+            }
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1>AI Tutor Chat</h1>
-        <div class="stats">
-            <div class="stat-item">
-                <span>Turns: <strong id="turnCount">0</strong></span>
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <button class="new-chat-btn" onclick="newChat()">
+            <span>+</span>
+            <span>New Chat</span>
+        </button>
+    </div>
+
+    <div class="sidebar-content">
+        <div class="sidebar-section">
+            <div class="section-title">User Profile</div>
+            <div class="user-info-sidebar">
+                <label>User ID</label>
+                <input type="text" id="userId" value="student121">
             </div>
-            <div class="stat-item">
-                <span>Messages: <strong id="messageCount">0</strong></span>
+            <div class="user-info-sidebar">
+                <label>Your Name</label>
+                <input type="text" id="userName" value="Johnny">
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-title">Statistics</div>
+            <div class="stat-card">
+                <span class="stat-label">Turns</span>
+                <span class="stat-value" id="turnCount">0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Messages</span>
+                <span class="stat-value" id="messageCount">0</span>
             </div>
         </div>
     </div>
 
-    <div class="chat-area" id="chatArea">
-        <div class="message tutor">
-            <div class="message-content">
-                Hello! I'm your AI tutor. I'll help you learn programming from basics to advanced level.
-                What would you like to learn today?
+    <div class="sidebar-footer">
+        <button class="clear-chat-btn" onclick="clearConversation()">
+            Clear Conversation
+        </button>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <div class="chat-header">
+        <button class="toggle-sidebar-btn" onclick="toggleSidebar()">☰</button>
+        <div class="chat-title">AI Programming Tutor</div>
+        <div class="header-actions">
+            <!-- Future: Add more actions here -->
+        </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer">
+        <div class="welcome-screen" id="welcomeScreen">
+            <div class="welcome-icon">🎓</div>
+            <div class="welcome-title">Welcome to AI Tutor</div>
+            <div class="welcome-subtitle">
+                Your personal programming mentor. Ask me anything about programming,
+                and I'll guide you from basics to mastery with detailed explanations and examples.
             </div>
         </div>
     </div>
 
     <div class="input-area">
-        <div class="user-info">
-            <input type="text" id="userId" placeholder="User ID (e.g., student123)" value="student123">
-            <input type="text" id="userName" placeholder="Your Name (e.g., John)" value="John">
-            <button id="clearBtn">Clear Chat</button>
-        </div>
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <span>Tutor is thinking...</span>
-        </div>
-        <div class="input-group">
+        <div class="input-container">
+            <div class="loading-indicator" id="loadingIndicator">
+                <div class="spinner"></div>
+                <span>AI is thinking...</span>
+            </div>
+            <div class="input-wrapper">
                 <textarea
                         id="questionInput"
-                        placeholder="Ask your question here..."
-                        rows="2"
+                        placeholder="Ask me anything about programming..."
+                        rows="1"
                 ></textarea>
-            <button id="sendBtn">Send</button>
+                <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                    </svg>
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -302,69 +849,156 @@
 <script>
     const API_BASE_URL = 'http://localhost:8080/api/tutor';
 
-    const chatArea = document.getElementById('chatArea');
+    const chatContainer = document.getElementById('chatContainer');
+    const welcomeScreen = document.getElementById('welcomeScreen');
     const questionInput = document.getElementById('questionInput');
     const sendBtn = document.getElementById('sendBtn');
-    const clearBtn = document.getElementById('clearBtn');
     const userIdInput = document.getElementById('userId');
     const userNameInput = document.getElementById('userName');
     const turnCountEl = document.getElementById('turnCount');
     const messageCountEl = document.getElementById('messageCount');
-    const loadingEl = document.getElementById('loading');
+    const loadingIndicator = document.getElementById('loadingIndicator');
 
-    // Format code blocks in messages
-    function formatMessage(text) {
-        // Replace code blocks with proper formatting
-        text = text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-            return `<pre><code class="language-${lang || 'text'}">${escapeHtml(code.trim())}</code></pre>`;
-        });
+    // Configure marked for markdown parsing
+    marked.setOptions({
+        breaks: true,
+        gfm: true,
+        highlight: false // Let Prism handle highlighting
+    });
 
-        // Replace inline code
-        text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // Auto-resize textarea
+    questionInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+    });
 
-        // Replace newlines with <br>
-        text = text.replace(/\n/g, '<br>');
+    // Send on Enter (Shift+Enter for new line)
+    questionInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
 
-        return text;
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
     }
 
-    function escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return text.replace(/[&<>"']/g, m => map[m]);
+    function newChat() {
+        if (confirm('Start a new conversation? Current chat will be cleared.')) {
+            clearConversation();
+        }
+    }
+
+    function getUserInitial(name) {
+        return name ? name.charAt(0).toUpperCase() : 'U';
     }
 
     function addMessage(text, isUser) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${isUser ? 'user' : 'tutor'}`;
-
-        const contentDiv = document.createElement('div');
-        contentDiv.className = 'message-content';
-
-        if (isUser) {
-            contentDiv.textContent = text;
-        } else {
-            contentDiv.innerHTML = formatMessage(text);
+        // Hide welcome screen on first message
+        if (welcomeScreen) {
+            welcomeScreen.style.display = 'none';
         }
 
-        messageDiv.appendChild(contentDiv);
-        chatArea.appendChild(messageDiv);
-        chatArea.scrollTop = chatArea.scrollHeight;
+        const messageWrapper = document.createElement('div');
+        messageWrapper.className = 'message-wrapper';
+
+        const message = document.createElement('div');
+        message.className = `message ${isUser ? 'user' : 'tutor'}`;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar';
+        avatar.textContent = isUser ? getUserInitial(userNameInput.value) : 'AI';
+
+        const content = document.createElement('div');
+        content.className = 'message-content';
+
+        if (isUser) {
+            content.textContent = text;
+        } else {
+            // Parse markdown and render
+            const htmlContent = marked.parse(text);
+            content.innerHTML = htmlContent;
+
+            // Add enhanced code blocks and highlight
+            setTimeout(() => {
+                enhanceCodeBlocks(content);
+                Prism.highlightAllUnder(content);
+            }, 0);
+        }
+
+        message.appendChild(avatar);
+        message.appendChild(content);
+        messageWrapper.appendChild(message);
+        chatContainer.appendChild(messageWrapper);
+
+        // Smooth scroll to bottom
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function enhanceCodeBlocks(container) {
+        const codeBlocks = container.querySelectorAll('pre code');
+
+        codeBlocks.forEach((block) => {
+            const pre = block.parentElement;
+
+            // Detect language
+            const classMatch = block.className.match(/language-(\w+)/);
+            const langName = classMatch ? classMatch[1] : 'code';
+
+            // Create wrapper
+            const wrapper = document.createElement('div');
+            wrapper.className = 'code-block-wrapper';
+
+            // Create header
+            const header = document.createElement('div');
+            header.className = 'code-header';
+
+            const langSpan = document.createElement('span');
+            langSpan.className = 'code-language';
+            langSpan.textContent = langName;
+
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'copy-btn';
+            copyBtn.textContent = 'Copy code';
+            copyBtn.dataset.code = block.textContent;
+            copyBtn.onclick = function() { copyCode(this); };
+
+            header.appendChild(langSpan);
+            header.appendChild(copyBtn);
+
+            // Wrap everything
+            pre.parentNode.insertBefore(wrapper, pre);
+            wrapper.appendChild(header);
+            wrapper.appendChild(pre);
+        });
+    }
+
+    function copyCode(button) {
+        const code = button.dataset.code;
+        navigator.clipboard.writeText(code).then(() => {
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.classList.add('copied');
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.classList.remove('copied');
+            }, 2000);
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+        });
     }
 
     function showError(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-message';
-        errorDiv.textContent = message;
-        chatArea.appendChild(errorDiv);
-        chatArea.scrollTop = chatArea.scrollHeight;
+        const errorToast = document.createElement('div');
+        errorToast.className = 'error-toast';
+        errorToast.textContent = message;
+        document.body.appendChild(errorToast);
 
-        setTimeout(() => errorDiv.remove(), 5000);
+        setTimeout(() => {
+            errorToast.style.animation = 'slideIn 0.3s ease-out reverse';
+            setTimeout(() => errorToast.remove(), 300);
+        }, 4000);
     }
 
     function updateStats(turnCount, messageCount) {
@@ -372,22 +1006,28 @@
         messageCountEl.textContent = messageCount;
     }
 
-    async function sendQuestion() {
+    async function sendMessage() {
         const question = questionInput.value.trim();
         const userId = userIdInput.value.trim();
         const userName = userNameInput.value.trim();
 
-        if (!question || !userId || !userName) {
-            showError('Please fill in all fields');
+        if (!question) {
+            showError('Please enter a message');
+            return;
+        }
+
+        if (!userId || !userName) {
+            showError('Please fill in your user information in the sidebar');
             return;
         }
 
         // Add user message
         addMessage(question, true);
         questionInput.value = '';
+        questionInput.style.height = 'auto';
 
         // Show loading
-        loadingEl.classList.add('active');
+        loadingIndicator.classList.add('active');
         sendBtn.disabled = true;
 
         try {
@@ -417,9 +1057,9 @@
 
         } catch (error) {
             console.error('Error:', error);
-            showError('Failed to get response from tutor. Make sure the backend is running on port 8080.');
+            showError('Failed to connect to the tutor service. Make sure the backend is running on port 8080.');
         } finally {
-            loadingEl.classList.remove('active');
+            loadingIndicator.classList.remove('active');
             sendBtn.disabled = false;
             questionInput.focus();
         }
@@ -429,11 +1069,7 @@
         const userId = userIdInput.value.trim();
 
         if (!userId) {
-            showError('Please enter a User ID');
-            return;
-        }
-
-        if (!confirm('Are you sure you want to clear the conversation?')) {
+            showError('Please enter a User ID in the sidebar');
             return;
         }
 
@@ -447,13 +1083,20 @@
             }
 
             // Clear chat area
-            chatArea.innerHTML = `
-                    <div class="message tutor">
-                        <div class="message-content">
-                            Conversation cleared! What would you like to learn?
-                        </div>
+            chatContainer.innerHTML = '';
+
+            // Show welcome screen
+            const welcomeHTML = `
+                <div class="welcome-screen" id="welcomeScreen">
+                    <div class="welcome-icon">🎓</div>
+                    <div class="welcome-title">Welcome to AI Tutor</div>
+                    <div class="welcome-subtitle">
+                        Your personal programming mentor. Ask me anything about programming,
+                        and I'll guide you from basics to mastery with detailed explanations and examples.
                     </div>
-                `;
+                </div>
+            `;
+            chatContainer.innerHTML = welcomeHTML;
 
             // Reset stats
             updateStats(0, 0);
@@ -464,18 +1107,7 @@
         }
     }
 
-    // Event listeners
-    sendBtn.addEventListener('click', sendQuestion);
-    clearBtn.addEventListener('click', clearConversation);
-
-    questionInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendQuestion();
-        }
-    });
-
-    // Focus on input on load
+    // Focus input on load
     window.addEventListener('load', () => {
         questionInput.focus();
     });
