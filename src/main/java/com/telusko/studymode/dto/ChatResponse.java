@@ -8,5 +8,5 @@ import lombok.Data;
 public class ChatResponse {
     private String answer;
     private int turnCount;
-    private int messageCount;
+     private int messageCount;
 }
