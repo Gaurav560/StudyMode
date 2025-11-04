@@ -71,7 +71,7 @@ public class TutorService {
     }
 
     /**
-     * Generate AI response - fully server-side with Spring AI memory
+     * Generate AI response with context-aware prompt enhancement
      */
     @Transactional
     public ChatResponse chat(String userId, String conversationId, String question, String userName) {
@@ -89,15 +89,16 @@ public class TutorService {
         conversation.setUpdatedAt(Instant.now());
         conversationRepository.save(conversation);
 
-        // 3. Prepare system prompt with user context
-        String systemPrompt = systemPromptTemplate.format(Map.of(
-                "userName", userName != null ? userName : "Student"
-        ));
+        // 3. Get conversation history for context injection
+        List<Message> conversationHistory = tutorChatMemory.get(conversationId);
+
+        // 4. Build context-aware system prompt
+        String enhancedSystemPrompt = buildContextAwarePrompt(userName, conversationHistory, question);
 
         try {
-            // 4. Call AI with Spring AI memory - it automatically manages conversation history
+            // 5. Call AI with enhanced system prompt
             String response = tutorChatClient.prompt()
-                    .system(systemPrompt)
+                    .system(enhancedSystemPrompt)
                     .user(question)
                     .options(ChatOptions.builder().temperature(0.7).build())
                     .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, conversationId))
@@ -118,6 +119,116 @@ public class TutorService {
                     "Failed to generate response: " + e.getMessage()
             );
         }
+    }
+
+    /**
+     * Build universal context-aware prompt that works for ANY conversation pattern
+     * This method doesn't hardcode scenarios - it provides general interpretation guidance
+     */
+    private String buildContextAwarePrompt(String userName, List<Message> history, String currentQuestion) {
+        StringBuilder prompt = new StringBuilder();
+
+        // Base system prompt
+        prompt.append(systemPromptTemplate.format(Map.of("userName", userName)));
+        prompt.append("\n\n");
+
+        // Add explicit conversation history if exists
+        if (!history.isEmpty()) {
+            prompt.append("========================================\n");
+            prompt.append("📝 CONVERSATION HISTORY (CRITICAL - READ THIS FIRST):\n");
+            prompt.append("========================================\n\n");
+
+            // Show last 10 messages (to keep prompt size manageable)
+            int startIndex = Math.max(0, history.size() - 10);
+            List<Message> recentHistory = history.subList(startIndex, history.size());
+
+            for (Message msg : recentHistory) {
+                if (msg instanceof UserMessage) {
+                    prompt.append("USER: ").append(msg.getText()).append("\n");
+                } else if (msg instanceof AssistantMessage) {
+                    prompt.append("YOU: ").append(msg.getText()).append("\n");
+                }
+            }
+
+            prompt.append("\n👉 USER'S CURRENT MESSAGE: \"").append(currentQuestion).append("\"\n");
+            prompt.append("\n========================================\n");
+
+            // Universal interpretation guidance
+            String lastAssistantMessage = getLastAssistantMessage(history);
+
+            prompt.append("\n⚠️ UNIVERSAL INTERPRETATION RULES:\n");
+            prompt.append("========================================\n\n");
+
+            if (lastAssistantMessage != null) {
+                // Check if your last message was a question
+                boolean askedQuestion = lastAssistantMessage.contains("?");
+
+                if (askedQuestion) {
+                    prompt.append("✅ YOUR LAST MESSAGE ASKED A QUESTION:\n");
+                    prompt.append("   \"").append(truncateMessage(lastAssistantMessage)).append("\"\n\n");
+                    prompt.append("🎯 THEREFORE: The user's current message \"").append(currentQuestion).append("\" is ANSWERING your question.\n\n");
+                    prompt.append("📌 INTERPRETATION GUIDELINES:\n");
+                    prompt.append("   • Short answers like 'yes', 'no', 'ok', 'done' are answers to YOUR question\n");
+                    prompt.append("   • Do NOT interpret them as 'I want to stop' or 'I'm not interested'\n");
+                    prompt.append("   • Analyze what question you asked, then interpret the answer in that context\n");
+                    prompt.append("   • If the answer doesn't make sense, ask for clarification politely\n\n");
+                } else {
+                    prompt.append("✅ YOUR LAST MESSAGE WAS A STATEMENT (not a question)\n");
+                    prompt.append("   \"").append(truncateMessage(lastAssistantMessage)).append("\"\n\n");
+                    prompt.append("🎯 THEREFORE: The user is either:\n");
+                    prompt.append("   • Responding to your statement\n");
+                    prompt.append("   • Asking a follow-up question\n");
+                    prompt.append("   • Requesting clarification\n");
+                    prompt.append("   • Expressing understanding ('ok', 'got it', etc.)\n\n");
+                }
+            }
+
+            prompt.append("❌ PHRASES THAT MEAN USER WANTS TO STOP (very rare):\n");
+            prompt.append("   • 'stop', 'quit', 'cancel'\n");
+            prompt.append("   • 'I don't want to', 'I'm not interested'\n");
+            prompt.append("   • 'maybe later', 'not now'\n\n");
+
+            prompt.append("✅ COMMON CONTINUATION PATTERNS:\n");
+            prompt.append("   • 'yes/yeah/yup/sure/ok' after a question = affirmative\n");
+            prompt.append("   • 'no/nope/nah' after a question = negative\n");
+            prompt.append("   • 'done/finished/installed' = completed the task\n");
+            prompt.append("   • 'next/continue' = ready to proceed\n");
+            prompt.append("   • Short responses are usually answers to your question\n\n");
+
+            prompt.append("🧠 SMART INTERPRETATION:\n");
+            prompt.append("   1. Review what YOU asked/said last\n");
+            prompt.append("   2. Interpret user's response in THAT context\n");
+            prompt.append("   3. If ambiguous, assume they want to continue (most common)\n");
+            prompt.append("   4. Continue the natural flow of the conversation\n");
+            prompt.append("   5. Only assume they want to stop if they explicitly say so\n\n");
+
+            prompt.append("========================================\n\n");
+        }
+
+        return prompt.toString();
+    }
+
+    /**
+     * Get the last assistant message from conversation history
+     */
+    private String getLastAssistantMessage(List<Message> history) {
+        for (int i = history.size() - 1; i >= 0; i--) {
+            Message msg = history.get(i);
+            if (msg instanceof AssistantMessage) {
+                return msg.getText();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Truncate long messages for readability in prompt
+     */
+    private String truncateMessage(String message) {
+        if (message.length() <= 150) {
+            return message;
+        }
+        return message.substring(0, 147) + "...";
     }
 
     /**
@@ -234,7 +345,7 @@ public class TutorService {
         return MessageDto.builder()
                 .role(role)
                 .content(message.getText())
-                .timestamp(Instant.now()) // Spring AI doesn't store timestamps, use current time
+                .timestamp(Instant.now())
                 .build();
     }
 }
